@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Chatbot Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        /* Chatbot Styles */
+        #chatbot {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 380px;
+            height: 520px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        #chatHeader {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #chatHeader h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        #minimizeBtn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #chatMessages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .message {
+            margin: 12px 0;
+            padding: 14px 18px;
+            border-radius: 20px;
+            max-width: 85%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-bottom-left-radius: 5px;
+        }
+
+        .typing {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: #cbd5e1;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        #chatInput {
+            display: flex;
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            border-radius: 0 0 20px 20px;
+            gap: 10px;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #userInput:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        #sendBtn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        #sendBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(16,185,129,0.4);
+        }
+
+        #toggleChat {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 10px 30px rgba(59,130,246,0.4);
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        #toggleChat:hover {
+            transform: scale(1.1) rotate(10deg);
+        }
+
+        .quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-btn {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .quick-btn:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 480px) {
+            #chatbot { width: 95vw; height: 80vh; right: 5px; bottom: 5px; }
+            .demo-container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎓 College Chatbot Demo</h1>
+        <p style="text-align: center; color: #64748b; margin-bottom: 20px;">
+            Click the chat button below 👇 or wait 3 seconds for auto-show
+        </p>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <div id="toggleChat">💬</div>
+
+    <!-- Chatbot Container -->
+    <div id="chatbot">
+        <div id="chatHeader">
+            <h3>🤖 College Assistant</h3>
+            <button id="minimizeBtn">_</button>
+        </div>
+        <div id="chatMessages">
+            <div class="message bot">
+                <strong>Hi! 👋 I'm your College Assistant</strong><br>
+                I can help you with:
+                <div class="quick-buttons">
+                    <span class="quick-btn" data-query="admissions">Admissions</span>
+                    <span class="quick-btn" data-query="courses">Courses</span>
+                    <span class="quick-btn" data-query="fees">Fees</span>
+                    <span class="quick-btn" data-query="hostel">Hostel</span>
+                </div>
+            </div>
+        </div>
+        <div id="chatInput">
+            <input type="text" id="userInput" placeholder="Ask me anything about college..." />
+            <button id="sendBtn">➤</button>
+        </div>
+    </div>
+
+    <script>
+        class CollegeChatbot {
+            constructor() {
+                // Comprehensive college responses
+                this.responses = {
+                    // Admissions
+                    'admission': [
+                        `🎓 <strong>Admissions 2024</strong><br>
+                        ✅ B.Tech/B.Sc: 60% in 12th<br>
+                        ✅ MBA: Graduation + CAT/MAT<br>
+                        📅 Last Date: <strong>15th July 2024</strong><br>
+                        💰 Application Fee: ₹1000<br>
+                        <a href="/admissions" style="color:#3b82f6;">Apply Now →</a>`,
+                        `📋 <strong>Admission Process:</strong><br>
+                        1️⃣ Online Application<br>
+                        2️⃣ Entrance Test (if applicable)<br>
+                        3️⃣ Merit List<br>
+                        4️⃣ Document Verification<br>
+                        📞 Helpline: 1800-123-4567`
+                    ],
+                    
+                    // Courses
+                    'course': [
+                        `📚 <strong>Popular Courses:</strong><br>
+                        🖥️ B.Tech (CSE, ECE, ME) - 4 Years<br>
+                        📊 BBA/MBA - 3/2 Years<br>
+                        🔬 B.Sc/M.Sc (Physics, Chemistry, Maths)<br>
+                        👩‍⚕️ B.Pharm<br>
+                        <a href="/courses" style="color:#3b82f6;">View All →</a>`,
+                        `🎯 <strong>Engineering Branches:</strong><br>
+                        💻 Computer Science<br>
+                        📡 Electronics & Comm<br>
+                        ⚙️ Mechanical<br>
+                        🤖 AI & ML (New!)`
+                    ],
+                    
+                    // Fees
+                    'fee': [
+                        `💰 <strong>Fee Structure (Per Semester):</strong><br>
+                        🖥️ B.Tech: ₹55,000<br>
+                        📊 MBA: ₹85,000<br>
+                        🔬 B.Sc: ₹25,000<br>
+                        🏠 Hostel: ₹35,000<br>
+                        ✅ <strong>Scholarships:</strong> 50-100% for merit students`,
+                        `💳 <strong>Payment Options:</strong><br>
+                        💸 Online (UPI/Card/Netbanking)<br>
+                        💰 Demand Draft<br>
+                        📄 Fee Receipt via Email<br>
+                        📞 Contact Accounts: 01234-567890`
+                    ],
+                    
+                    // Hostel
+                    'hostel': [
+                        `🏠 <strong>Hostel Facilities:</strong><br>
+                        👦 Boys Hostel: 500+ capacity<br>
+                        👧 Girls Hostel: 300+ capacity<br>
+                        🍽️ Mess (Pure Veg/Non-Veg)<br>
+                        📶 WiFi 100Mbps<br>
+                        🏋️ Gym & Sports<br>
+                        💰 ₹35,000/Semester`,
+                        `🛏️ <strong>Room Types:</strong><br>
+                        👥 Triple Sharing: ₹30,000<br>
+                        👫 Double Sharing: ₹40,000<br>
+                        🛋️ AC Room: ₹55,000<br>
+                        📞 Warden: 98765-43210`
+                    ],
+                    
+                    // Faculty & Placements
+                    'faculty': [
+                        `👨‍🏫 <strong>Faculty:</strong> 150+ PhD holders<br>
+                        🏆 50+ publications/year<br>
+                        🌍 Industry experience<br>
+                        <a href="/faculty" style="color:#3b82f6;">Meet Faculty →</a>`,
+                        `💼 <strong>Placements 2023:</strong><br>
+                        🏢 95% placement rate<br>
+                        💰 Highest: ₹45 LPA<br>
+                        🏭 TCS, Infosys, Wipro, Accenture<br>
+                        📈 Average: ₹6.5 LPA`
+                    ],
+                    
+                    // Contact
+                    'contact': [
+                        `📞 <strong>Contact Details:</strong><br>
+                        🏫 Main Campus: City Road, State<br>
+                        📧 info@college.edu<br>
+                        ☎️ +91-12345-67890<br>
+                        🕒 9AM - 6PM (Mon-Sat)<br>
+                        🌐 www.college.edu`,
+                        `📍 <strong>Departments:</strong><br>
+                        CSE: cse@college.edu<br>
+                        ECE: ece@college.edu<br>
+                        MBA: mba@college.edu<br>
+                        🔐 Emergency: 112`
+                    ],
+                    
+                    // Events & Calendar
+                    'event': [
+                        `📅 <strong>Upcoming Events:</strong><br>
+                        🎓 Fresher's Party: 15th Aug<br>
+                        🏆 Tech Fest: 20-22 Sep<br>
+                        📚 Parent Meet: 10th Oct<br>
+                        🏅 Sports Day: 5th Nov<br>
+                        <a href="/events" style="color:#3b82f6;">Full Calendar →</a>`
+                    ],
+                    
+                    // Default responses
+                    'hello': ['Hi! How can I help you today? 😊', 'Hello! Welcome to our college! 🎓'],
+                    'help': ['I can help with Admissions, Courses, Fees, Hostel, Placements, Events!'],
+                    'bye': ['Goodbye! Visit us soon! 👋', 'Have a great day! 😊'],
+                    'default': [
+                        'I can help with <strong>Admissions, Courses, Fees, Hostel, Faculty, Events</strong>. Try one of these!<br>',
+                        `Not sure? Try asking about:<br>
+                        - "B.Tech admission process"<br>
+                        - "Hostel facilities"<br>
+                        - "Placement statistics"<br>
+                        - "Fee structure"`,
+                        '💡 Quick topics: Admissions • Courses • Fees • Hostel • Contact'
+                    ]
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.chatbot = document.getElementById('chatbot');
+                this.toggleBtn = document.getElementById('toggleChat');
+                this.minimizeBtn = document.getElementById('minimizeBtn');
+                this.messages = document.getElementById('chatMessages');
+                this.userInput = document.getElementById('userInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.isMinimized = false;
+
+                // Event listeners
+                this.toggleBtn.addEventListener('click', () => this.toggleChat());
+                this.minimizeBtn.addEventListener('click', () => this.minimizeChat());
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.userInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+
+                // Quick buttons
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('quick-btn')) {
+                        this.userInput.value = e.target.dataset.query;
+                        this.sendMessage();
+                    }
+                });
+
+                // Auto-show after 3 seconds
+                setTimeout(() => this.toggleChat(true), 3000);
+            }
+
+            toggleChat(show = null) {
+                if (show === null) {
+                    const isVisible = this.chatbot.style.display === 'flex';
+                    this.chatbot.style.display = isVisible ? 'none' : 'flex';
+                    this.toggleBtn.textContent = isVisible ? '💬' : '❌';
+                } else {
+                    this.chatbot.style.display = show ? 'flex' : 'none';
+                    this.toggleBtn.textContent = show ? '❌' : '💬';
+                }
+            }
+
+            minimizeChat() {
+                this.isMinimized = !this.isMinimized;
+                const messagesContainer = this.messages.parentElement;
+                if (this.isMinimized) {
+                    messagesContainer.style.display = 'none';
+                    this.minimizeBtn.textContent = '+';
+                    this.chatbot.style.height = '120px';
+                } else {
+                    messagesContainer.style.display = 'block';
+                    this.minimizeBtn.textContent = '_';
+                    this.chatbot.style.height = '520px';
+                }
+            }
+
+            async sendMessage() {
+                const message = this.userInput.value.trim();
+                if (!message) return;
+
+                // Add user message
+                this.addMessage(message, 'user');
+                this.userInput.value = '';
+
+                // Show typing indicator
+                this.showTyping();
+
+                // Get response
+                const response = await this.getResponse(message.toLowerCase());
+                this.hideTyping();
+                this.addMessage(response, 'bot');
+            }
+
+            addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                messageDiv.innerHTML = text;
+                this.messages.appendChild(messageDiv);
+                this.messages.scrollTop = this.messages.scrollHeight;
+            }
+
+            showTyping() {
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typingIndicator';
+                typingDiv.className = 'message bot typing';
+                typingDiv.innerHTML = `
+                    <span>College Assistant is typing</span>
+                    <div class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                `;
+                this.messages.appendChild(typingDiv);
+                this.messages.scrollTop = this.messages.scrollHeight;
+            }
+
+            hideTyping() {
+                const typing = document.getElementById('typingIndicator');
+                if (typing) typing.remove();
+            }
+
+            async getResponse(message) {
+                // Check for exact matches first
+               
